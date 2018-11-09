@@ -1,0 +1,12 @@
+#visual code stuff
+/.vscode/**
+
+#node stuff
+/node_modules/**
+/package-lock.json
+/package.json
+
+
+# all kinds of images
+/*.jpg
+/*.png

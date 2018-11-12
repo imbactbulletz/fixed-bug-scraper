@@ -1,5 +1,7 @@
 // dependencies
-var scraper = require('./functions.js');
+var scraper = require('./scraper.js');
+var mySQLConnector = require('./mysql_connector.js');
+
 const performance = require('perf_hooks').performance;
 var t0;
 var t1;
@@ -21,8 +23,10 @@ var t1;
         // go to fixed bugs thread
         await scraper.goto(fixedBugsURL);
 
+        let mySQLConnection = mySQLConnector.connect('localhost', 'gamer_district', 'root', '');
 
-        await scraper.scrapeFixedBugs();
+
+        await scraper.scrapeFixedBugs(mySQLConnection);
 
         // scrape the fixed bugs
 

@@ -97,7 +97,7 @@ module.exports.login = async function login(user) {
 /**
  * Scrapes the fixed bugs from "Fixed-bugs" thread.
  */
-module.exports.scrapeFixedBugs = async function scrapeFixedBugs() {
+module.exports.scrapeFixedBugs = async function scrapeFixedBugs(mySQLConnection) {
     // saving the current page so that it can be used to navigate by clicing 'next' button
     var currentPageURL = currentPage.url();
     // thread links that are contained in the subforum
@@ -109,8 +109,10 @@ module.exports.scrapeFixedBugs = async function scrapeFixedBugs() {
 
         var threadData = await getThreadData(threadLink);
         console.log(threadData);
+
+        mySQLConnection.insertBugReport(threadData);
     }
-}
+};
 
 
 /**

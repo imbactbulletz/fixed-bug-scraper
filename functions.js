@@ -17,6 +17,7 @@ async function init(){
         // launches browser with a GUI in specified dimensions
         browser = await puppeteer.launch({
             headless: false,
+            devtools: true,
             args: [
                 `--window-size=${width},${height}`
             ]
@@ -100,14 +101,14 @@ module.exports.scrapeFixedBugs = async function scrapeFixedBugs(){
     // saving the current page so that it can be used to navigate by clicing 'next' button
     var currentPageURL = currentPage.url();
     // thread links that are contained in the subforum
-    var topicLinks = await getTopicLinks();
+    var threadLinks = await getThreadLinks();
 
     // visit each thread and scrape data from it
-    for(i=0; i<topicLinks.length; i++){
-        var topicLink = topicLinks[i];
+    for(i=0; i<threadLinks.length; i++){
+        var threadLink = threadLinks[i];
 
-        var topicData = await getTopicData(topicLink);
-        console.log(topicData);
+        var threadData = await getThreadData(threadLink);
+        console.log(threadData);
     }
 }
 
@@ -115,35 +116,79 @@ module.exports.scrapeFixedBugs = async function scrapeFixedBugs(){
 /**
  * Gets the links of the threads that are located in one page of a subforum.
  */
-async function getTopicLinks(){
+async function getThreadLinks(){
     // performs a function that makes an array of elements that are contained in a table and are links, at the same time
-    let topicLinks = await currentPage.evaluate(function(){
+    let threadLinks = await currentPage.evaluate(function(){
         return Array.from(document.querySelectorAll(' table tr td h4  a[href^="https://forum.gamer-district.org/topic/"]'))
         .map(function(val){
             return val.href;
         });
     });
 
-    return topicLinks;
+    return threadLinks;
 }
 
-async function getTopicData(topicURL){
-    var topicData = {};
+async function getThreadData(threadURL){
 
-    await currentPage.goto(topicURL, {waitUntil: 'networkidle2'});
+    await currentPage.goto(threadURL, {waitUntil: 'networkidle2'});
 
-    let topicPosts = await currentPage.evaluate(function(){
-        // return Array.from(document.querySelectorAll('.post_wrap')).map((val) => val.innerHTML);
-        return Array.from(document.querySelectorAll('.post_wrap h3 '));
+    let threadData = await currentPage.evaluate(function(){
+
+        let threadPosts =  document.querySelectorAll('.post_wrap ');
+        let threadData = {
+            topic: {},
+            replies: []
+        };
+
+        let postData;
+        for(i=0; i<threadPosts.length; i++){
+
+            postData = {};
+            // gets the topic's title from the page
+            let postTitle = document.querySelector('.ipsType_pagetitle').innerText;
+            postData.title = postTitle;
+
+            let post = threadPosts[i];
+
+            // gets the author's name
+            postData.postedBy = post.querySelector('.post_username span span').innerText;
+
+            // get date posted
+            let datePosted_str = post.querySelector('abbr.published ').title;
+            let datePosted = Date.parse(datePosted_str);
+            postData.postedOn = datePosted;
+
+            // get content
+            let content = post.querySelector('div.post.entry-content');
+
+            let content_str = content.innerText;
+
+            content_str += "\nLinks:";
+
+            //get links
+            let links = content.querySelectorAll("a[href]");
+
+            for(j=0; j<links.length;j++){
+                content_str += "\n" + links[j].innerText + ": " + links[j].href;
+            }
+
+            postData.content = content_str;
+
+
+            if(i==0){
+                threadData.topic = postData;
+            } else {
+                threadData.replies.push(postData);
+            }
+
+
+        }
+
+        console.log(threadData);
+        return threadData;
     });
-
-    // extracting the main post
-    var mainPost = topicPosts[0];
-
-    var x = await mainPost.querySelector('.post_username');
-    console.log(x);
 
 
     await currentPage.waitFor(10000);
-    return topicData;
+    return threadData;
 }

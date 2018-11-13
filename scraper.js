@@ -18,7 +18,7 @@ let ctr = 0;
 async function init() {
     // launches browser with a GUI in specified dimensions
     browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         args: [
             `--window-size=${width},${height}`
         ]
@@ -99,32 +99,33 @@ module.exports.login = async function login(user) {
  * Scrapes the fixed bugs from "Fixed-bugs" thread.
  */
 module.exports.scrapeFixedBugs = async function scrapeFixedBugs() {
-    console.log("Scraping page: " + ++ctr);
+    console.log("Scraping page: " + ++ctr + "..");
     // saving the current page so that it can be used to navigate by clicing 'next' button
-    var currentPageURL = currentPage.url();
+    var currentPageURL = await currentPage.url();
     // thread links that are contained in the subforum
-    //await browser.waitFor(1000);
+
     var threadLinks = await getThreadLinks();
 
     // visit each thread and scrape data from it
-    for (i = 0; i < await threadLinks.length; i++) {
+    for (let i = 0; i < await threadLinks.length; i++) {
         var threadLink = threadLinks[i];
 
         var threadData = await getThreadData(threadLink);
         //console.log(threadData);
 
-        //mySQLConnector.insertBugReport(threadData);
+        mySQLConnector.insertBugReport(threadData);
     }
 
     await currentPage.goto(currentPageURL, {waitUntil: 'networkidle2'});
 
     if(await currentPage.$('a[rel="next"]')){
-        await currentPage.click('a[rel="next"]');
+        currentPage.click('a[rel="next"]');
+        await currentPage.waitForNavigation({waitUntil: 'domcontentloaded'});
+        await this.scrapeFixedBugs();
     } else {
         return 1;
     }
 
-    this.scrapeFixedBugs();
 };
 
 

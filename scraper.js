@@ -1,6 +1,7 @@
 process.setMaxListeners(Infinity);
 
 const puppeteer = require('puppeteer');
+const mySQLConnector = require('./mysql_connector.js');
 
 // website related attributes
 var browser = undefined;
@@ -10,6 +11,7 @@ var currentPage = undefined;
 const width = 1600;
 const height = 900;
 
+let ctr = 0;
 /**
  * Prepares the browser for connection.
  */
@@ -17,7 +19,6 @@ async function init() {
     // launches browser with a GUI in specified dimensions
     browser = await puppeteer.launch({
         headless: false,
-        devtools: true,
         args: [
             `--window-size=${width},${height}`
         ]
@@ -97,21 +98,33 @@ module.exports.login = async function login(user) {
 /**
  * Scrapes the fixed bugs from "Fixed-bugs" thread.
  */
-module.exports.scrapeFixedBugs = async function scrapeFixedBugs(mySQLConnection) {
+module.exports.scrapeFixedBugs = async function scrapeFixedBugs() {
+    console.log("Scraping page: " + ++ctr);
     // saving the current page so that it can be used to navigate by clicing 'next' button
     var currentPageURL = currentPage.url();
     // thread links that are contained in the subforum
+    //await browser.waitFor(1000);
     var threadLinks = await getThreadLinks();
 
     // visit each thread and scrape data from it
-    for (i = 0; i < threadLinks.length; i++) {
+    for (i = 0; i < await threadLinks.length; i++) {
         var threadLink = threadLinks[i];
 
         var threadData = await getThreadData(threadLink);
-        console.log(threadData);
+        //console.log(threadData);
 
-        mySQLConnection.insertBugReport(threadData);
+        //mySQLConnector.insertBugReport(threadData);
     }
+
+    await currentPage.goto(currentPageURL, {waitUntil: 'networkidle2'});
+
+    if(await currentPage.$('a[rel="next"]')){
+        await currentPage.click('a[rel="next"]');
+    } else {
+        return 1;
+    }
+
+    this.scrapeFixedBugs();
 };
 
 
@@ -167,9 +180,10 @@ async function getThreadData(threadURL) {
             // gets the author's name
             postData.postedBy = post.querySelector('.post_username span span').innerText;
 
+
             // get date posted
             let datePosted_str = post.querySelector('abbr.published ').title;
-            postData.postedOn = Date.parse(datePosted_str);
+            postData.postedOn = datePosted_str.split('T')[0];
 
             // gets content of the post as a HTML Element
             let content = post.querySelector('div.post.entry-content');

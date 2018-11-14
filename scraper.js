@@ -151,10 +151,9 @@ async function getThreadLinks() {
  */
 async function getThreadData(threadURL) {
 
-    await currentPage.goto(threadURL, {waitUntil: 'networkidle2'});
+    await currentPage.goto(threadURL, {waitUntil: 'domcontentloaded'});
 
     let threadData = await currentPage.evaluate(function () {
-
         // all posts have a wrapper div with class "post_wrap" that
         let threadPosts = document.querySelectorAll('.post_wrap ');
 
@@ -168,7 +167,7 @@ async function getThreadData(threadURL) {
         let postData;
 
         // iterating through each post of the thread
-        for (i = 0; i < threadPosts.length; i++) {
+        for (let i = 0; i < threadPosts.length; i++) {
             postData = {};
 
             // gets the post's title from the page
@@ -179,7 +178,7 @@ async function getThreadData(threadURL) {
             let post = threadPosts[i];
 
             // gets the author's name
-            postData.postedBy = post.querySelector('.post_username span span').innerText;
+            postData.postedBy = post.querySelector('.post_username').innerText;
 
 
             // get date posted
@@ -204,6 +203,7 @@ async function getThreadData(threadURL) {
 
             // sets post's content
             postData.content = content_str;
+
 
             // if it's a first post in the thread then it's a topic,
             if (i == 0) {

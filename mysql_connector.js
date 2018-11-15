@@ -17,7 +17,6 @@ module.exports.connect = function(host, database, username, password){
 };
 
 module.exports.insertBugReport = async function (threadData){
-    const report = threadData.topic;
 
     const topicID = new Promise((resolve,reject) =>{
         mySQLConnection.query(INSERT_BUG_REPORT_QUERY,[

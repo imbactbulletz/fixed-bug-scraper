@@ -12,16 +12,6 @@ let t1;
     var user = {'username': 'exideoz', 'password': 'venividiscrape'};
     var fixedBugsURL = "https://forum.gamer-district.org/forum/124-fixed-bugs/";
 
-
-    let getTime = (milli) => {
-    let time = new Date(milli);
-    let hours = time.getUTCHours();
-    let minutes = time.getUTCMinutes();
-    let seconds = time.getUTCSeconds();
-    let milliseconds = time.getUTCMilliseconds();
-    return hours + ":" + minutes + ":" + seconds + ":" + milliseconds;
-};
-
     // the main function of the program
     async function main() {
         t0 = performance.now();
@@ -44,7 +34,7 @@ let t1;
         t1 = performance.now();
         console.log((t1-t0)/1000);
         console.log("Finished scraping!");
-        console.log("Time taken: " + moment.duration(t1-t0).humanize());
+        console.log("Time taken: " + moment.utc(t1-t0).format('HH:mm:ss'));
 
     }
 
